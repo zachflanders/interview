@@ -11,3 +11,12 @@ yarn server
 yarn full-stack
 yarn test
 ```
+
+The app connects to a default postgres database.  These values can be changed at server/.env to suit your system:
+
+```
+HOSTURL=localhost
+DATABASE=postgres
+USERNAME=postgres
+PASSWORD=
+```
