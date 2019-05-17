@@ -1,0 +1,6 @@
+#sidebar{
+  width: 400px;
+  padding: 20px;
+  border-left: 1px solid #eeeeee;
+  overflow-y:  scroll;
+}

@@ -1,0 +1,7 @@
+#nav-bar{
+  display: relative;
+}
+.title{
+  flex-grow: 1;
+  text-decoration: none;
+}

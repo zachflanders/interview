@@ -1,0 +1,19 @@
+{
+  "name": "mysidewalk-interview-reviews",
+  "version": "1.0.0",
+  "description": "Solution to mySidewalk interview question",
+  "scripts": {
+    "client": "cd client && yarn start",
+    "server": "cd server && nodemon server.js",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\"",
+    "test": "cypress open"
+  },
+  "author": "Zach Flanders",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^3.5.0"
+  },
+  "dependencies": {
+    "cypress": "^3.2.0"
+  }
+}
