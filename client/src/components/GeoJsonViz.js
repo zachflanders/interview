@@ -20,7 +20,7 @@ import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import Select from 'ol/interaction/Select.js';
 import Overlay from 'ol/Overlay';
-import {click} from 'ol/events/condition.js';
+import {click, pointermove} from 'ol/events/condition.js';
 
 import centerOfMass from '@turf/center-of-mass';
 
@@ -188,7 +188,7 @@ class GeoJsonViz extends React.Component {
 
       //select features
       var select = new Select({
-        condition: click,
+        condition: pointermove,
         layers: [layer],
         style:new Style({
             stroke: new Stroke({
