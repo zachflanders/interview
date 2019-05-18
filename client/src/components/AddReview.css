@@ -3,6 +3,11 @@
 
 }
 
+#addReviewMap{
+  width: 100%;
+  height: 300px
+}
+
 #addForm{
   max-width: 900px;
   margin-right: auto;

@@ -110,6 +110,13 @@ class ViewReviews extends React.Component {
         this.reloadResults();
       }.bind(this));
 
+      //change cursor when hovering over feature
+      map.on('pointermove', function(e) {
+        var pixel = map.getEventPixel(e.originalEvent);
+        var hit = map.hasFeatureAtPixel(pixel);
+        document.getElementById(map.getTarget()).style.cursor = hit ? 'pointer' : '';
+      });
+
       //get the bounds of current map extent and send to API
       let bounds = transformExtent(map.getView().calculateExtent(map.getSize()),'EPSG:3857','EPSG:4326');
       axios.get(`${process.env.REACT_APP_API_URL}/api/reviews`, {

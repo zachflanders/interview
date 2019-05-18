@@ -8,6 +8,8 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import Snackbar from '@material-ui/core/Snackbar';
+
 
 //OpenLayers Imports
 import Map from 'ol/Map';
@@ -25,9 +27,6 @@ import CircleStyle from 'ol/style/Circle';
 import Point from 'ol/geom/Point';
 import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
-
-
-
 
 let basemapLayers = [];
 let map = {};
@@ -50,7 +49,6 @@ let layer = new VectorLayer({
 });
 var writer = new GeoJSON();
 
-
 class AddReview extends React.Component {
   constructor(props) {
     super(props);
@@ -59,9 +57,15 @@ class AddReview extends React.Component {
       body:'',
       address:'',
       coordinates: [],
-      point: {}
+      point: {},
+      showMessage: false,
+      message: ''
     };
     this.searchAddress = this.searchAddress.bind(this);
+  }
+
+  closeMessage = () => {
+    this.setState({message: false, showMessage: false});
   }
 
   handleChange = name => event => {
@@ -69,20 +73,34 @@ class AddReview extends React.Component {
   };
 
   searchAddress = () => {
+    //I'm uisng the open source nominatim geocoder here.  It is still pretty bad, but I'm a big OSM and opensource nerd, so there you go.
     axios.get(`https://nominatim.openstreetmap.org/search/${this.state.address}?format=json&addressdetails=1&limit=1`)
     .then((response)=>{
-        //I would want to add some error handling here.
-        let coordinates = [Number(response.data[0].lon), Number(response.data[0].lat)];
-        this.setState({coordinates: coordinates})
-        map.setView(new View({
-          center: fromLonLat(coordinates),
-          zoom: 18,
-          maxZoom: 20,
-          minZoom: 12
-        }));
-        let feature = new Feature(new Point(fromLonLat(coordinates)))
-        source.addFeature(feature);
-        this.setState({point:writer.writeFeatures(source.getFeatures())});
+        //clear the point from the previous search (if it exists)
+        source.clear();
+        //if the address is not found display a message to the user
+        if(response.data === undefined || response.data.length == 0){
+          this.setState({message:'Address not found.', showMessage: true});
+        }
+        else{
+          //save the coordinates in an array
+          let coordinates = [Number(response.data[0].lon), Number(response.data[0].lat)];
+          //set the coordinates in the state of the component
+          this.setState({coordinates: coordinates})
+          //set the map centered on the coordinate
+          map.setView(new View({
+            center: fromLonLat(coordinates),
+            zoom: 18,
+            maxZoom: 20,
+            minZoom: 12
+          }));
+          //create a feature and add to the map
+          let feature = new Feature(new Point(fromLonLat(coordinates)))
+          source.addFeature(feature);
+          //Create the feature in a geojson format and set the state of the component
+          this.setState({point:writer.writeFeatures(source.getFeatures())});
+        }
+
     })
   }
   submit = (event) =>{
@@ -98,7 +116,14 @@ class AddReview extends React.Component {
     console.log(review);
     axios.post(`${process.env.REACT_APP_API_URL}/api/review/add`, {review:review})
     .then((response)=>{
-      console.log(response);
+      this.setState({
+        title: '',
+        body:'',
+        address:'',
+        coordinates: [],
+        point: {}
+      })
+      this.setState({message:'Review sucessfully saved.', showMessage: true});
     })
   }
 
@@ -123,7 +148,7 @@ class AddReview extends React.Component {
                   onClick={this.searchAddress}
                 >Find</Button>
               </div>
-              <div id='map' />
+              <div id='addReviewMap' />
               <TextField
                 id="title"
                 label="Title"
@@ -155,6 +180,16 @@ class AddReview extends React.Component {
             </Button>
           </CardContent>
         </Card>
+        <Snackbar
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          open={this.state.showMessage}
+          ContentProps={{
+            'aria-describedby': 'message-id',
+          }}
+          message={<span id="message-id">{this.state.message}</span>}
+          autoHideDuration = {2000}
+          onClose={()=>this.closeMessage()}
+          />
       </div>
     )
   }
@@ -164,8 +199,14 @@ class AddReview extends React.Component {
 
     }));
     map = new Map({
-        target: 'map',
+        target: 'addReviewMap',
         layers: basemapLayers.concat(layer),
+        view: new View({
+          center: fromLonLat([-94.586002,39.104693]),
+          zoom: 14,
+          maxZoom: 20,
+          minZoom: 12
+        }),
         controls: [
           new Zoom({
             className: 'zoom-control'

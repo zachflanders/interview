@@ -20,7 +20,6 @@ class Sidebar extends React.Component {
   render(){
     let cards;
     console.log(this.props.reviews)
-
     //if there are reviews, loop over the reviews and create cards.
     if(!isEmpty(this.props.reviews)){
       cards = this.props.reviews.map(review=>{
@@ -34,7 +33,6 @@ class Sidebar extends React.Component {
         )
       })
     }
-
     return(
         <div id='sidebar'>
           {cards}
