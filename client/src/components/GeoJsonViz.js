@@ -1,5 +1,5 @@
 import React from 'react';
-import './ViewReviews.css'
+import './GeoJsonViz.css';
 import kcTracts from '../assets/kc-tract.json'
 import kcNeighborhoods from '../assets/kc-neighborhoods.json'
 
@@ -8,7 +8,6 @@ import 'ol/ol.css';
 import Map from 'ol/Map';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import {fromLonLat} from 'ol/proj';
-
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import View from 'ol/View';
@@ -20,16 +19,15 @@ import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import Select from 'ol/interaction/Select.js';
 import Overlay from 'ol/Overlay';
-import {click, pointermove} from 'ol/events/condition.js';
+import {click, pointerMove} from 'ol/events/condition.js';
 
-import centerOfMass from '@turf/center-of-mass';
-
+//Material-UI imports
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 
+import centerOfMass from '@turf/center-of-mass';
 import * as d3 from 'd3'
-
-import './GeoJsonViz.css';
+import chroma from 'chroma-js';
 
 const writer = new GeoJSON();
 
@@ -39,17 +37,26 @@ let source = new VectorSource({
   features: (writer).readFeatures(kcTracts, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'} )
 });
 
-let layer = new VectorLayer({
-  source: source,
-  style: new Style({
+let colorScale = chroma.scale('YlGnBu');
+
+let getStyle = (feature, hover) =>{
+  console.log(feature.getProperties());
+  let properties = feature.getProperties();
+  let percentAlternative = 1-(properties["pop-commute-drive_alone"] / (properties["pop-commute-drive_alone"]+properties["pop-commute-drive_carpool"]+properties["pop-commute-public_transit"]+properties["pop-commute-walk"]));
+  return (new Style({
       stroke: new Stroke({
-        color: '#3498db',
-        width: 1
+        color: (hover ? '#000000' : '#ffffff'),
+        width: 0.5
       }),
       fill: new Fill({
-        color: 'rgba(52, 152, 219, 0.4)'
+        color: (hover ? colorScale(percentAlternative).alpha(0.8) : colorScale(percentAlternative).alpha(0.5))
       })
-    })
+    }))
+}
+
+let layer = new VectorLayer({
+  source: source,
+  style: (feature) => getStyle(feature, false)
 });
 
 class GeoJsonViz extends React.Component {
@@ -59,9 +66,7 @@ class GeoJsonViz extends React.Component {
 
     };
   }
-
   renderChart(data){
-
     //Note, I used 'https://blog.risingstack.com/d3-js-tutorial-bar-charts-with-javascript/' as a guide.
     this.setState({chartInit: true});
     console.log(data);
@@ -103,32 +108,26 @@ class GeoJsonViz extends React.Component {
         .attr('text-anchor', 'middle')
         .text('Commuting Patterns')
   }
-
   switchMaps(layer){
     console.log(layer);
     if(layer === 'neighborhoods'){
       source.clear();
       source.addFeatures((writer).readFeatures(kcNeighborhoods, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'}))
-
     }
     else{
       source.clear();
       source.addFeatures((writer).readFeatures(kcTracts, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'}))
-
     }
   }
 
   render(){
     return(
-
       <div id='gejsonMapViz'>
         <Paper id='switcher' >
           <Button onClick={()=>this.switchMaps('tracts')}>View Census Tracts</Button><br />
           <Button onClick={()=>this.switchMaps('neighborhoods')}>View Neighborhoods</Button>
         </Paper>
-
         <div id='geojsonMap' />
-
         <Paper id='popover' >
           <svg />
           <div className='arrow'></div>
@@ -137,8 +136,6 @@ class GeoJsonViz extends React.Component {
     )
   }
   componentDidMount(){
-
-
     basemapLayers.push(new TileLayer({
       source: new TileWMS({
         //I am hosting a geoserver instance to serve my own maps
@@ -166,9 +163,9 @@ class GeoJsonViz extends React.Component {
         overlays: [overlay],
         view: new View({
           center: fromLonLat([-94.586002,39.104693]),
-          zoom: 14,
+          zoom: 12,
           maxZoom: 20,
-          minZoom: 12,
+          minZoom: 10,
           //I would probably prefer to reproject the geojson files into EPSG:3857 because this makes the map look distorted
         }),
         controls: [
@@ -188,17 +185,9 @@ class GeoJsonViz extends React.Component {
 
       //select features
       var select = new Select({
-        condition: pointermove,
+        condition: pointerMove,
         layers: [layer],
-        style:new Style({
-            stroke: new Stroke({
-              color: 'rgba(41, 128, 185,1.0)',
-              width: 2
-            }),
-            fill: new Fill({
-              color: 'rgba(41, 128, 185,0.4)'
-            })
-          })
+        style:(feature) => getStyle(feature, true)
       });
       map.addInteraction(select);
       select.on('select', function(e) {
