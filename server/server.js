@@ -12,7 +12,7 @@ const app = express();
 
 //using dotenv for database info
 const dotenv = require("dotenv");
-dotenv.config()
+dotenv.config({path: '../'})
 
 
 
