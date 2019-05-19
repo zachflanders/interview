@@ -113,7 +113,7 @@ class AddReview extends React.Component {
       coordinates,
       point
     };
-    console.log(review);
+    console.log(`${process.env.REACT_APP_API_URL}/api/review/add`);
     axios.post(`${process.env.REACT_APP_API_URL}/api/review/add`, {review:review})
     .then((response)=>{
       this.setState({
